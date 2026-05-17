@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PSU CoE — Course CSAT Engine (Pilot)</title>
+<style>
+  :root {
+    --psu-navy: #0e2a47;
+    --psu-teal: #1f6b7a;
+    --psu-gold: #c8a35b;
+    --bg: #f6f7fa;
+    --card: #ffffff;
+    --border: #e3e6ec;
+    --ink: #1c2330;
+    --ink-soft: #5b6477;
+    --green: #2e8b57;
+    --green-bg: #e6f4ec;
+    --amber: #c98a1a;
+    --amber-bg: #fbf1de;
+    --red: #b32a2a;
+    --red-bg: #fbe6e6;
+    --shadow: 0 1px 3px rgba(14,42,71,0.06), 0 1px 2px rgba(14,42,71,0.04);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background: var(--bg); color: var(--ink); font-size: 14px; line-height: 1.5; }
+  .topbar { background: var(--psu-navy); color: #fff; padding: 14px 28px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar .brand { font-weight: 600; letter-spacing: 0.3px; }
+  .topbar .brand .accent { color: var(--psu-gold); font-weight: 500; }
+  .topbar .crumbs { font-size: 12.5px; color: #cfd6e2; }
+  .topbar .crumbs a { color: #cfd6e2; text-decoration: none; }
+  .topbar .crumbs a:hover { color: #fff; }
+  .pilot-tag { background: var(--psu-gold); color: var(--psu-navy); padding: 2px 8px; font-size: 11px; border-radius: 3px; font-weight: 600; letter-spacing: 0.5px; margin-left: 10px; }
+
+  .container { max-width: 1280px; margin: 0 auto; padding: 24px 28px 48px; }
+
+  h1 { font-size: 22px; font-weight: 600; margin: 0 0 18px; color: var(--psu-navy); }
+  h2 { font-size: 16px; font-weight: 600; margin: 0 0 12px; color: var(--psu-navy); display: flex; align-items: center; gap: 8px; }
+  h2 .sym { color: var(--psu-teal); font-size: 18px; }
+  .subtitle { color: var(--ink-soft); font-size: 13.5px; margin-bottom: 24px; }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #fff; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 18px; box-shadow: var(--shadow); flex-wrap: wrap; gap: 10px; }
+  .toolbar .tb-left { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toolbar .tb-right { font-size: 12px; color: var(--ink-soft); display: flex; align-items: center; gap: 12px; }
+  .tb-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--psu-navy); background: var(--psu-navy); color: #fff; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .tb-btn:hover { background: #163a5e; }
+  .tb-btn.secondary { background: #fff; color: var(--psu-navy); }
+  .tb-btn.secondary:hover { background: var(--psu-navy); color: #fff; }
+  .tb-btn.ghost { background: transparent; border-color: var(--border); color: var(--ink-soft); }
+  .tb-btn.ghost:hover { color: var(--psu-navy); border-color: var(--psu-navy); }
+  .save-pulse { display: inline-block; width: 8px; height: 8px; background: var(--green); border-radius: 50%; }
+
+  .tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--border); margin-bottom: 20px; flex-wrap: wrap; }
+  .tab { padding: 10px 18px; background: transparent; border: none; cursor: pointer; font-size: 13.5px; color: var(--ink-soft); font-weight: 500; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+  .tab:hover { color: var(--psu-navy); }
+  .tab.active { color: var(--psu-navy); border-bottom-color: var(--psu-teal); font-weight: 600; }
+  .tab .num { background: var(--bg); color: var(--ink-soft); padding: 1px 7px; border-radius: 10px; font-size: 11px; margin-right: 6px; }
+  .tab.active .num { background: var(--psu-teal); color: #fff; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 20px; margin-bottom: 20px; box-shadow: var(--shadow); }
+  .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12px; color: var(--ink-soft); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+  .field input, .field select, .field textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 4px; font-size: 13.5px; background: #fff; color: var(--ink); font-family: inherit; }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--psu-teal); box-shadow: 0 0 0 2px rgba(31,107,122,0.15); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: #f0f3f7; color: var(--ink); font-weight: 600; padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--border); font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafbfc; }
+
+  .checkbox-cell { text-align: center; }
+  .checkbox-cell input[type="checkbox"] { cursor: pointer; width: 16px; height: 16px; accent-color: var(--psu-teal); }
+
+  .grade-input { width: 70px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 3px; font-size: 13px; text-align: right; }
+  .grade-input:focus { outline: none; border-color: var(--psu-teal); }
+  .inline-input { padding: 4px 8px; border: 1px solid transparent; background: transparent; border-radius: 3px; font-size: 13px; font-family: inherit; color: var(--ink); width: 100%; }
+  .inline-input:hover { border-color: var(--border); background: #fafbfc; }
+  .inline-input:focus { outline: none; border-color: var(--psu-teal); background: #fff; box-shadow: 0 0 0 2px rgba(31,107,122,0.15); }
+  .inline-input.narrow { width: 80px; }
+  .inline-input.tiny { width: 60px; text-align: right; }
+  .inline-input.id-input { width: 60px; font-weight: 600; color: var(--psu-navy); }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--psu-navy); background: var(--psu-navy); color: #fff; border-radius: 4px; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.15s; }
+  .btn:hover { background: #163a5e; }
+  .btn-secondary { background: transparent; color: var(--psu-navy); }
+  .btn-secondary:hover { background: var(--psu-navy); color: #fff; }
+  .btn-add { background: var(--psu-teal); border-color: var(--psu-teal); color: #fff; padding: 6px 12px; font-size: 12.5px; }
+  .btn-add:hover { background: #155561; }
+  .btn-remove { background: transparent; border: 1px solid var(--border); color: var(--red); width: 26px; height: 26px; padding: 0; border-radius: 4px; cursor: pointer; font-size: 16px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; }
+  .btn-remove:hover { background: var(--red-bg); border-color: var(--red); }
+
+  .so-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 16px; }
+  .so-card { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 16px; position: relative; }
+  .so-card .so-name { font-weight: 600; color: var(--psu-navy); font-size: 14px; margin-bottom: 6px; }
+  .so-card .so-pct { font-size: 28px; font-weight: 700; line-height: 1; margin-bottom: 6px; }
+  .so-card .so-label { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; }
+  .so-card .so-foot { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: var(--ink-soft); border-top: 1px solid var(--border); padding-top: 8px; }
+  .so-card.pass { border-top: 3px solid var(--green); }
+  .so-card.pass .so-pct { color: var(--green); }
+  .so-card.warn { border-top: 3px solid var(--amber); }
+  .so-card.warn .so-pct { color: var(--amber); }
+  .so-card.fail { border-top: 3px solid var(--red); }
+  .so-card.fail .so-pct { color: var(--red); }
+  .so-card.muted { opacity: 0.45; border-top: 3px solid var(--border); }
+  .so-card.muted .so-pct { color: var(--ink-soft); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; letter-spacing: 0.3px; }
+  .badge.pass { background: var(--green-bg); color: var(--green); }
+  .badge.warn { background: var(--amber-bg); color: var(--amber); }
+  .badge.fail { background: var(--red-bg); color: var(--red); }
+
+  .clo-row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .clo-row:last-child { border-bottom: none; }
+  .clo-id { font-weight: 600; color: var(--psu-navy); width: 50px; }
+  .clo-text { flex: 1; color: var(--ink-soft); font-size: 12.5px; }
+  .clo-bar-wrap { width: 240px; background: #eef0f4; border-radius: 4px; height: 8px; overflow: hidden; position: relative; }
+  .clo-bar { height: 100%; transition: width 0.4s; }
+  .clo-bar.pass { background: var(--green); }
+  .clo-bar.warn { background: var(--amber); }
+  .clo-bar.fail { background: var(--red); }
+  .threshold-line { position: absolute; top: 0; bottom: 0; left: 70%; width: 1px; background: var(--ink-soft); opacity: 0.4; }
+  .clo-pct { font-weight: 600; width: 60px; text-align: right; }
+
+  .student-table .pass-cell { background: var(--green-bg); color: var(--green); font-weight: 600; }
+  .student-table .fail-cell { background: var(--red-bg); color: var(--red); font-weight: 600; }
+
+  .alert { padding: 12px 16px; border-radius: 4px; margin-bottom: 16px; font-size: 13px; display: flex; gap: 10px; align-items: flex-start; }
+  .alert.info { background: #eef4fa; border-left: 3px solid var(--psu-teal); color: var(--psu-navy); }
+  .alert.warn { background: var(--amber-bg); border-left: 3px solid var(--amber); color: #7a5612; }
+  .alert.success { background: var(--green-bg); border-left: 3px solid var(--green); color: #1e5e3a; }
+  .alert .sym { font-size: 16px; }
+
+  .mini-stat { background: #f0f3f7; padding: 12px; border-radius: 4px; text-align: center; }
+  .mini-stat .v { font-size: 22px; font-weight: 700; color: var(--psu-navy); }
+  .mini-stat .l { font-size: 11px; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+
+  .mapping-grid th, .mapping-grid td { text-align: center; padding: 6px 8px; }
+  .mapping-grid th:first-child, .mapping-grid td:first-child { text-align: left; font-weight: 600; }
+  .mapping-grid .so-label { color: var(--ink-soft); font-size: 11px; }
+
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11.5px; font-weight: 600; margin: 2px; cursor: pointer; user-select: none; border: 1.5px solid transparent; transition: all 0.12s; }
+  .chip.on { background: var(--psu-teal); color: #fff; border-color: var(--psu-teal); }
+  .chip.on:hover { background: #155561; }
+  .chip.on::before { content: "✓ "; }
+  .chip.off { background: #fff; color: var(--ink-soft); border-color: var(--border); border-style: dashed; }
+  .chip.off:hover { border-color: var(--psu-teal); color: var(--psu-teal); background: #eef4fa; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+
+  .csat-chart { width: 100%; height: auto; background: #fff; border: 1px solid #000; }
+  .chart-title { font-size: 13px; font-weight: 600; color: var(--psu-navy); text-align: center; margin: 8px 0; }
+  .csat-chart .axis { stroke: #000; stroke-width: 1.2; }
+  .csat-chart .axis-label { fill: #000; font-size: 12px; font-weight: 700; font-family: "Cambria","Times New Roman",Georgia,serif; }
+  .csat-chart .axis-title { fill: #000; font-size: 13px; font-weight: 700; font-family: "Cambria","Times New Roman",Georgia,serif; }
+  .csat-chart .bar-direct { fill: #4F81BD; stroke: #385D8A; stroke-width: 0.5; }
+  .csat-chart .bar-indirect { fill: #F79646; stroke: #B66C2A; stroke-width: 0.5; }
+  .csat-chart .group-label { fill: #000; font-size: 12px; font-weight: 700; font-family: "Cambria","Times New Roman",Georgia,serif; text-anchor: middle; }
+  .csat-chart .threshold { stroke: #E1251B; stroke-width: 2.4; fill: none; }
+  .csat-chart .legend-text { fill: #000; font-size: 12px; font-weight: 700; font-family: "Cambria","Times New Roman",Georgia,serif; }
+
+  .modal-backdrop { display: none; position: fixed; inset: 0; background: rgba(14,42,71,0.55); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-backdrop.open { display: flex; }
+  .modal { background: #fff; border-radius: 8px; padding: 28px; max-width: 540px; width: 100%; box-shadow: 0 20px 50px rgba(0,0,0,0.25); max-height: 90vh; overflow: auto; }
+  .modal h2 { margin-top: 0; }
+  .modal .modal-foot { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+
+  .csv-area { width: 100%; min-height: 100px; padding: 10px; border: 1px solid var(--border); border-radius: 4px; font-family: "Consolas","Monaco",monospace; font-size: 12px; }
+  .csv-area:focus { outline: none; border-color: var(--psu-teal); }
+
+  .help-card { background: #eef4fa; border: 1px solid #cfdde9; border-radius: 6px; padding: 18px; margin-bottom: 18px; }
+  .help-card h3 { margin: 0 0 8px; font-size: 14px; color: var(--psu-navy); }
+  .help-card ol { margin: 8px 0 0 16px; padding: 0; line-height: 1.7; font-size: 13px; color: var(--ink); }
+  .help-card .close-help { float: right; cursor: pointer; color: var(--ink-soft); font-size: 18px; line-height: 1; }
+
+  /* ===== PRINT VIEW (PSU CSAT one-pager) ===== */
+  .print-view {
+    background: #fff;
+    border: 1px solid #888;
+    padding: 36px 44px;
+    font-family: "Calibri", "Segoe UI", Arial, sans-serif;
+    color: #000;
+    font-size: 12px;
+    max-width: 820px;
+    margin: 0 auto;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+  }
+  .print-view .pv-header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0e2a47; padding-bottom: 10px; margin-bottom: 14px; }
+  .print-view .pv-logo { font-family: "Cambria", "Times New Roman", serif; font-size: 38px; font-weight: 700; color: #0e2a47; line-height: 1; }
+  .print-view .pv-logo .a { color: #c8a35b; }
+  .print-view .pv-header-right { text-align: right; font-size: 11px; color: #0e2a47; line-height: 1.4; }
+  .print-view .pv-header-right .psu { font-weight: 700; font-size: 13px; letter-spacing: 0.3px; }
+  .print-view .pv-header-right .coe { background: #0e2a47; color: #fff; padding: 2px 6px; display: inline-block; margin-top: 4px; font-size: 10px; letter-spacing: 0.4px; }
+  .print-view .pv-subtitle { font-size: 11px; color: #555; margin-bottom: 12px; }
+  .print-view .pv-info { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+  .print-view .pv-info td { padding: 4px 8px; border: 1px solid #999; font-size: 12px; vertical-align: top; }
+  .print-view .pv-info .lbl { font-weight: 700; background: #f0f0f0; width: 22%; }
+  .print-view .pv-info .val { font-weight: 700; color: #0e2a47; }
+  .print-view .pv-section-title { background: #d8e3ed; color: #0e2a47; font-weight: 700; padding: 5px 8px; text-align: center; font-size: 12.5px; border: 1px solid #999; border-bottom: none; }
+  .print-view .pv-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 12px; }
+  .print-view .pv-table th, .print-view .pv-table td { border: 1px solid #999; padding: 5px 8px; text-align: center; }
+  .print-view .pv-table th { background: #eaeaea; font-weight: 700; }
+  .print-view .pv-table .lbl-cell { background: #f0f0f0; font-weight: 700; text-align: left; }
+  .print-view .pv-table .below { color: #d11; font-weight: 700; }
+  .print-view .pv-notes { font-size: 10.5px; color: #444; line-height: 1.5; margin: 8px 0 14px; }
+  .print-view .pv-notes div { margin-bottom: 2px; }
+  .print-view .pv-chart-box { border: 1px solid #999; padding: 12px; margin-bottom: 14px; background: #fff; }
+  .print-view .pv-rubric-title { font-weight: 700; font-size: 12px; margin-bottom: 4px; }
+  .print-view .pv-rubric-legend { background: #d8e3ed; padding: 5px 8px; font-size: 11px; font-weight: 700; color: #0e2a47; border: 1px solid #999; border-top: none; }
+  .print-view .pv-date { text-align: right; background: #0e2a47; color: #fff; padding: 5px 10px; font-weight: 700; margin-top: 8px; display: inline-block; float: right; }
+  .print-view .pv-clear { clear: both; }
+
+  @media print {
+    body { background: #fff; }
+    .topbar, .toolbar, .tabs, .help-card, .no-print, .modal-backdrop { display: none !important; }
+    .container { padding: 0; max-width: none; }
+    h1, .subtitle { display: none; }
+    .panel { display: none !important; }
+    #panel-print { display: block !important; }
+    .print-view { border: none; box-shadow: none; padding: 0; max-width: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <span class="brand">PSU College of Engineering · <span class="accent">Curriculum Intelligence Portal</span></span>
+    <span class="pilot-tag">PILOT</span>
+  </div>
+  <div class="crumbs">
+    <a href="#">CIP Home</a> › Course CSAT Engine
+  </div>
+</div>
+
+<div class="container">
+
+  <h1>Course Student Assessment Tool (CSAT) Engine</h1>
+
+  <div class="toolbar">
+    <div class="tb-left">
+      <button class="tb-btn" onclick="openNewCourseModal()">⊕ New Course</button>
+    </div>
+    <div class="tb-right">
+      <span><span class="save-pulse"></span> Auto-saved to this browser</span>
+      <span id="last-saved">just now</span>
+    </div>
+  </div>
+
+  <div class="help-card" id="help-card" style="display:none">
+    <span class="close-help" onclick="dismissHelp()">×</span>
+    <h3>◎ Welcome</h3>
+    <ol>
+      <li>Click <strong>New Course</strong> to scaffold your course (CLOs, ATs, students).</li>
+      <li>Fill in CLOs → SO mapping → Assessment Tools → Grades. Each tab is independent — finish what you can today, come back later.</li>
+      <li>Your work auto-saves to this browser.</li>
+      <li>The <strong>Dashboard</strong> tab shows the live CSAT charts. The <strong>Print CSAT</strong> tab generates a printable one-page report.</li>
+    </ol>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="course"><span class="num">1</span>Course</button>
+    <button class="tab" data-panel="mapping"><span class="num">2</span>CLO ↔ SO Mapping</button>
+    <button class="tab" data-panel="ats"><span class="num">3</span>Assessment Tools</button>
+    <button class="tab" data-panel="grades"><span class="num">4</span>Grades</button>
+    <button class="tab" data-panel="survey"><span class="num">5</span>Exit Survey</button>
+    <button class="tab" data-panel="dashboard"><span class="num">●</span>Dashboard</button>
+    <button class="tab" data-panel="print"><span class="num">🖨</span>Print CSAT</button>
+  </div>
+
+  <div class="panel active" id="panel-course">
+    <div class="card">
+      <h2><span class="sym">◎</span>Course Information</h2>
+      <div class="grid-2">
+        <div class="field"><label>Course Code</label><input type="text" id="course-code"></div>
+        <div class="field"><label>Course Title</label><input type="text" id="course-title"></div>
+        <div class="field"><label>Instructor</label><input type="text" id="course-instructor"></div>
+        <div class="field"><label>Term</label><input type="text" id="course-term"></div>
+        <div class="field"><label>Credit Hours</label><input type="text" id="course-credits"></div>
+        <div class="field"><label>Number of Students</label><input type="text" id="course-students" readonly></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-mapping">
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="sym">◎</span>Course Learning Outcomes → Student Outcome Mapping</h2>
+        <button class="btn-add" onclick="addCLO()">+ Add CLO</button>
+      </div>
+      <p class="subtitle" style="margin-bottom:14px">Edit CLO IDs and statements inline. Check the box where each CLO maps to a Student Outcome.</p>
+      <div style="overflow-x:auto">
+        <table class="mapping-grid">
+          <thead>
+            <tr>
+              <th style="width:70px">CLO</th>
+              <th>Statement</th>
+              <th class="so-label">SO1</th>
+              <th class="so-label">SO2</th>
+              <th class="so-label">SO3</th>
+              <th class="so-label">SO4</th>
+              <th class="so-label">SO5</th>
+              <th class="so-label">SO6</th>
+              <th class="so-label">SO7</th>
+              <th style="width:32px"></th>
+            </tr>
+          </thead>
+          <tbody id="mapping-body"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span class="sym">✦</span>Student Outcomes (PSU EE — ABET-aligned)</h2>
+      <div id="so-defs"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-ats">
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="sym">◎</span>Assessment Tools</h2>
+        <button class="btn-add" onclick="addAT()">+ Add Assessment Tool</button>
+      </div>
+      <div class="alert info">
+        <span class="sym">✦</span>
+        <div><strong>How AT → CLO mapping works:</strong> Each row is one Assessment Tool (quiz, exam question, project, etc.). In the rightmost column you'll see one chip per CLO defined for this course. <strong>Click a chip to toggle</strong> whether that AT assesses that CLO — solid teal with a ✓ means ON, dashed outline means OFF. One AT can map to multiple CLOs.</div>
+      </div>
+      <div style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">AT</th>
+              <th>Label</th>
+              <th>Type</th>
+              <th style="text-align:right;width:90px">Max</th>
+              <th style="text-align:right;width:90px">Weight %</th>
+              <th>Mapped CLOs (click to toggle)</th>
+              <th style="width:32px"></th>
+            </tr>
+          </thead>
+          <tbody id="ats-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-grades">
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="sym">◎</span>Student Grades</h2>
+        <div>
+          <button class="btn-add" onclick="addStudent()">+ Add Student</button>
+          <button class="tb-btn secondary" onclick="openCSVModal()" style="margin-left:6px">⬇ Paste from CSV</button>
+        </div>
+      </div>
+      <p class="subtitle" style="margin-bottom:14px">Enter raw scores. Achievement % computes live.</p>
+      <div style="overflow-x:auto">
+        <table id="grades-table">
+          <thead id="grades-head"></thead>
+          <tbody id="grades-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-survey">
+    <div class="card">
+      <h2><span class="sym">◎</span>Course Exit Survey (Indirect Assessment)</h2>
+      <p class="subtitle" style="margin-bottom:14px">CES on a 1–5 scale per CLO. Drives the indirect % on the dashboard.</p>
+      <table>
+        <thead>
+          <tr><th>CLO</th><th>Statement</th><th style="text-align:right">CES Score (1–5)</th><th style="text-align:right">% Equivalent</th></tr>
+        </thead>
+        <tbody id="survey-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-dashboard">
+    <div class="grid-4">
+      <div class="mini-stat"><div class="v" id="stat-students">—</div><div class="l">Students</div></div>
+      <div class="mini-stat"><div class="v" id="stat-ats">—</div><div class="l">Assessment Tools</div></div>
+      <div class="mini-stat"><div class="v" id="stat-clos">—</div><div class="l">CLOs assessed</div></div>
+      <div class="mini-stat"><div class="v" id="stat-sos">—</div><div class="l">SOs assessed</div></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="sym">●</span>Student Outcomes Attainment</h2>
+        <div style="font-size:12px;color:var(--ink-soft)">Threshold: <strong>70%</strong> of students at <strong>70%</strong> per SO</div>
+      </div>
+      <div class="so-grid" id="so-cards"></div>
+    </div>
+
+    <div class="card">
+      <h2><span class="sym">◎</span>Course Learning Outcome Achievement</h2>
+      <p class="subtitle" style="margin-bottom:8px">Direct: weighted average % across mapped ATs. Threshold line at 70%.</p>
+      <div id="clo-bars"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="sym">◎</span>CSAT Performance Charts</h2>
+        <div style="font-size:12px;color:var(--ink-soft)">Direct vs Indirect · Threshold line at 70%</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr;gap:24px;margin-top:8px">
+        <div>
+          <div class="chart-title">Course Learning Outcomes (CLOs)</div>
+          <svg id="chart-clo" class="csat-chart" viewBox="0 0 760 340" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div>
+          <div class="chart-title">Student Outcomes (SOs)</div>
+          <svg id="chart-so" class="csat-chart" viewBox="0 0 760 340" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><span class="sym">✦</span>Per-Student SO Attainment</h2>
+      <div style="overflow-x:auto">
+        <table class="student-table">
+          <thead id="student-so-head"></thead>
+          <tbody id="student-so-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-print">
+    <div class="card no-print">
+      <div class="card-header">
+        <h2><span class="sym">🖨</span>Print CSAT Report</h2>
+        <button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>
+      </div>
+      <p style="margin:0;color:var(--ink-soft);font-size:13px">Below is the one-page CSAT report for this course. Click <strong>Print / Save as PDF</strong> — in the print dialog, choose <em>Save as PDF</em> as the destination if you want a file. The layout matches the official PSU CSAT template.</p>
+    </div>
+    <div class="print-view" id="print-view"></div>
+  </div>
+
+</div>
+
+<div class="modal-backdrop" id="new-course-modal">
+  <div class="modal">
+    <h2><span class="sym" style="color:var(--psu-teal)">⊕</span> New Course Setup</h2>
+    <p class="subtitle">Scaffold a fresh CSAT for your course. You can edit everything afterwards.</p>
+    <div class="field"><label>Course Code</label><input type="text" id="nc-code" placeholder="e.g. EE 305"></div>
+    <div class="field"><label>Course Title</label><input type="text" id="nc-title" placeholder="e.g. Power Electronics"></div>
+    <div class="field"><label>Instructor</label><input type="text" id="nc-instructor" placeholder="Dr. ..."></div>
+    <div class="field"><label>Term</label><input type="text" id="nc-term" placeholder="e.g. 252"></div>
+    <div class="grid-3">
+      <div class="field"><label>Number of CLOs</label><input type="number" id="nc-clos" value="6" min="1" max="20"></div>
+      <div class="field"><label>Number of ATs</label><input type="number" id="nc-ats" value="8" min="1" max="30"></div>
+      <div class="field"><label>Number of Students</label><input type="number" id="nc-students" value="0" min="0" max="500"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="tb-btn ghost" onclick="closeNewCourseModal()">Cancel</button>
+      <button class="tb-btn" onclick="createNewCourse()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="csv-modal">
+  <div class="modal">
+    <h2><span class="sym" style="color:var(--psu-teal)">⬇</span> Paste Student Grades</h2>
+    <p class="subtitle">Paste rows in this format (tab- or comma-separated):<br><code style="font-size:11px;color:var(--ink-soft)">StudentID, FullName, AT1Score, AT2Score, AT3Score, ...</code></p>
+    <textarea id="csv-text" class="csv-area" placeholder="221110003, Mohammed Alwetaid, 8, 10, 20, 16.5, 21, 1.67, 1.67, 1.67, 13, 13"></textarea>
+    <div class="alert info" style="margin-top:12px;font-size:12.5px">
+      <span class="sym">✦</span>
+      <div>Column order matches the AT table left-to-right. Rows replace the current students.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="tb-btn ghost" onclick="closeCSVModal()">Cancel</button>
+      <button class="tb-btn" onclick="importCSV()">Import</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SO_DEFS = {
+  SO1: {name: "SO1", short: "Problem Solving", desc: "Identify, formulate, and solve complex engineering problems by applying principles of engineering, science, and mathematics."},
+  SO2: {name: "SO2", short: "Engineering Design", desc: "Apply engineering design to produce solutions that meet specified needs with consideration of public health, safety, welfare, and broader factors."},
+  SO3: {name: "SO3", short: "Communication", desc: "Communicate effectively with a range of audiences."},
+  SO4: {name: "SO4", short: "Ethics & Professional Responsibility", desc: "Recognize ethical and professional responsibilities, and make informed judgments considering global, economic, environmental, and societal impacts."},
+  SO5: {name: "SO5", short: "Teamwork", desc: "Function effectively on a team that provides leadership, creates a collaborative environment, and meets objectives."},
+  SO6: {name: "SO6", short: "Experimentation", desc: "Develop and conduct experimentation, analyze data, and use engineering judgment to draw conclusions."},
+  SO7: {name: "SO7", short: "Lifelong Learning", desc: "Acquire and apply new knowledge as needed, using appropriate learning strategies."}
+};
+const ALL_SOS = ['SO1','SO2','SO3','SO4','SO5','SO6','SO7'];
+const STORAGE_KEY = 'psu-csat-engine-state-v1';
+
+function emptyState() {
+  return {
+    course: { code: "", title: "", instructor: "", term: "", credits: 3 },
+    threshold: 70,
+    clos: [],
+    cloSoMap: {},
+    ats: [],
+    students: [],
+    ces: {}
+  };
+}
+
+let STATE = emptyState();
+
+function saveToLocalStorage() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(STATE));
+    document.getElementById('last-saved').textContent = 'just now · ' + new Date().toLocaleTimeString();
+  } catch (e) { console.warn('localStorage save failed:', e); }
+}
+
+function loadFromLocalStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    if (data && data.course) { STATE = data; return true; }
+  } catch (e) { console.warn('localStorage load failed:', e); }
+  return false;
+}
+
+function addCLO() {
+  let nextNum = STATE.clos.length + 1;
+  let newId = nextNum + ".1";
+  while (STATE.clos.find(c => c.id === newId)) { nextNum++; newId = nextNum + ".1"; }
+  STATE.clos.push({id: newId, text: "New CLO — click to edit"});
+  STATE.cloSoMap[newId] = [];
+  STATE.ces[newId] = 0;
+  renderAll();
+  saveToLocalStorage();
+}
+
+function removeCLO(idx) {
+  const clo = STATE.clos[idx];
+  if (!confirm(`Remove CLO ${clo.id}? This will also remove it from any AT mappings.`)) return;
+  delete STATE.cloSoMap[clo.id];
+  delete STATE.ces[clo.id];
+  STATE.ats.forEach(a => { a.clos = a.clos.filter(c => c !== clo.id); });
+  STATE.clos.splice(idx, 1);
+  renderAll();
+  saveToLocalStorage();
+}
+
+function updateCLO(idx, field, value) {
+  const clo = STATE.clos[idx];
+  if (field === 'id') {
+    const oldId = clo.id;
+    const newId = value.trim();
+    if (!newId || newId === oldId) { renderMapping(); return; }
+    if (STATE.clos.find((c,i) => i !== idx && c.id === newId)) {
+      alert('CLO ID must be unique.');
+      renderMapping();
+      return;
+    }
+    STATE.cloSoMap[newId] = STATE.cloSoMap[oldId] || [];
+    delete STATE.cloSoMap[oldId];
+    STATE.ces[newId] = STATE.ces[oldId] || 0;
+    delete STATE.ces[oldId];
+    STATE.ats.forEach(a => { a.clos = a.clos.map(c => c === oldId ? newId : c); });
+    clo.id = newId;
+    renderAll();
+  } else if (field === 'text') {
+    clo.text = value;
+  }
+  saveToLocalStorage();
+}
+
+function addAT() {
+  const nextNum = STATE.ats.length + 1;
+  STATE.ats.push({
+    id: "AT" + nextNum, label: "AT" + nextNum, type: "Final Exam",
+    max: 10, weight: 5, clos: []
+  });
+  const newId = "AT" + nextNum;
+  STATE.students.forEach(s => { if (s.grades[newId] === undefined) s.grades[newId] = null; });
+  renderAll();
+  saveToLocalStorage();
+}
+
+function removeAT(idx) {
+  const at = STATE.ats[idx];
+  if (!confirm(`Remove ${at.label}?`)) return;
+  const idToRemove = at.id;
+  STATE.ats.splice(idx, 1);
+  STATE.students.forEach(s => { delete s.grades[idToRemove]; });
+  const idMap = {};
+  STATE.ats.forEach((a, i) => { idMap[a.id] = "AT" + (i+1); a.id = "AT" + (i+1); });
+  STATE.students.forEach(s => {
+    const newGrades = {};
+    Object.entries(s.grades).forEach(([k,v]) => {
+      if (idMap[k]) newGrades[idMap[k]] = v;
+      else newGrades[k] = v;
+    });
+    s.grades = newGrades;
+  });
+  renderAll();
+  saveToLocalStorage();
+}
+
+function updateAT(idx, field, value) {
+  const at = STATE.ats[idx];
+  if (field === 'max' || field === 'weight') {
+    at[field] = parseFloat(value) || 0;
+  } else {
+    at[field] = value;
+  }
+  renderAll();
+  saveToLocalStorage();
+}
+
+function toggleATClo(atIdx, cloId) {
+  const at = STATE.ats[atIdx];
+  if (at.clos.includes(cloId)) at.clos = at.clos.filter(c => c !== cloId);
+  else at.clos.push(cloId);
+  renderAts();
+  renderDashboard();
+  renderPrintView();
+  saveToLocalStorage();
+}
+
+function addStudent() {
+  const newStudent = {id: "", name: "New Student", grades: {}};
+  STATE.ats.forEach(a => { newStudent.grades[a.id] = null; });
+  STATE.students.push(newStudent);
+  renderGrades();
+  renderDashboard();
+  renderPrintView();
+  refreshStats();
+  saveToLocalStorage();
+}
+
+function removeStudent(idx) {
+  STATE.students.splice(idx, 1);
+  renderGrades();
+  renderDashboard();
+  renderPrintView();
+  refreshStats();
+  saveToLocalStorage();
+}
+
+function updateStudent(idx, field, value) {
+  STATE.students[idx][field] = value;
+  saveToLocalStorage();
+}
+
+function updateGrade(studentIdx, atId, value) {
+  const v = parseFloat(value);
+  STATE.students[studentIdx].grades[atId] = isNaN(v) ? null : v;
+  renderDashboard();
+  renderPrintView();
+  saveToLocalStorage();
+}
+
+function openNewCourseModal() { document.getElementById('new-course-modal').classList.add('open'); }
+function closeNewCourseModal() { document.getElementById('new-course-modal').classList.remove('open'); }
+
+function createNewCourse() {
+  const code = document.getElementById('nc-code').value.trim();
+  const title = document.getElementById('nc-title').value.trim();
+  const instructor = document.getElementById('nc-instructor').value.trim();
+  const term = document.getElementById('nc-term').value.trim();
+  const numClos = parseInt(document.getElementById('nc-clos').value) || 6;
+  const numAts = parseInt(document.getElementById('nc-ats').value) || 8;
+  const numStudents = parseInt(document.getElementById('nc-students').value) || 0;
+
+  STATE = emptyState();
+  STATE.course = { code, title, instructor, term, credits: 3 };
+
+  for (let i = 0; i < numClos; i++) {
+    const cloId = (numClos <= 8) ? (Math.floor(i/3)+1) + "." + ((i%3)+1) : ("CLO" + (i+1));
+    STATE.clos.push({id: cloId, text: ""});
+    STATE.cloSoMap[cloId] = [];
+    STATE.ces[cloId] = 0;
+  }
+  for (let i = 0; i < numAts; i++) {
+    STATE.ats.push({id: "AT"+(i+1), label: "AT"+(i+1), type: "Final Exam", max: 10, weight: 5, clos: []});
+  }
+  for (let i = 0; i < numStudents; i++) {
+    const grades = {};
+    STATE.ats.forEach(a => { grades[a.id] = null; });
+    STATE.students.push({id: "", name: "Student " + (i+1), grades});
+  }
+
+  closeNewCourseModal();
+  renderAll();
+  saveToLocalStorage();
+  switchPanel('course');
+}
+
+function openCSVModal() { document.getElementById('csv-modal').classList.add('open'); }
+function closeCSVModal() { document.getElementById('csv-modal').classList.remove('open'); }
+
+function importCSV() {
+  const text = document.getElementById('csv-text').value.trim();
+  if (!text) { closeCSVModal(); return; }
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const newStudents = [];
+  for (const line of lines) {
+    const parts = line.split(/\s*[,;\t]\s*/);
+    if (parts.length < 2) continue;
+    const sid = parts[0].trim();
+    const sname = parts[1].trim();
+    const grades = {};
+    STATE.ats.forEach((a, i) => {
+      const v = parseFloat(parts[2 + i]);
+      grades[a.id] = isNaN(v) ? null : v;
+    });
+    newStudents.push({id: sid, name: sname, grades});
+  }
+  if (newStudents.length) {
+    STATE.students = newStudents;
+    closeCSVModal();
+    document.getElementById('csv-text').value = '';
+    renderAll();
+    saveToLocalStorage();
+  }
+}
+
+function studentAchPct(student, at) {
+  const g = student.grades[at.id];
+  if (g === undefined || g === null || isNaN(g)) return null;
+  return (g / at.max) * 100;
+}
+function atAvgPct(at) {
+  const vals = STATE.students.map(s => studentAchPct(s, at)).filter(v => v !== null);
+  if (!vals.length) return 0;
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+function cloAvgPct(cloId) {
+  const ats = STATE.ats.filter(a => a.clos.includes(cloId));
+  if (!ats.length) return 0;
+  return ats.reduce((s,a)=>s+atAvgPct(a),0) / ats.length;
+}
+function studentCloPct(student, cloId) {
+  const ats = STATE.ats.filter(a => a.clos.includes(cloId));
+  if (!ats.length) return 0;
+  const vals = ats.map(a => studentAchPct(student, a)).filter(v => v !== null);
+  if (!vals.length) return 0;
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+function studentSoPct(student, soId) {
+  const clos = STATE.clos.filter(c => (STATE.cloSoMap[c.id]||[]).includes(soId));
+  if (!clos.length) return 0;
+  return clos.reduce((s,c)=>s+studentCloPct(student, c.id),0) / clos.length;
+}
+function soDirectPct(soId) {
+  const clos = STATE.clos.filter(c => (STATE.cloSoMap[c.id]||[]).includes(soId));
+  if (!clos.length || !STATE.students.length) return null;
+  const passing = STATE.students.filter(s => studentSoPct(s, soId) >= STATE.threshold).length;
+  return (passing / STATE.students.length) * 100;
+}
+function soIndirectPct(soId) {
+  const clos = STATE.clos.filter(c => (STATE.cloSoMap[c.id]||[]).includes(soId));
+  if (!clos.length) return null;
+  const vals = clos.map(c => (STATE.ces[c.id] || 0) * 20);
+  return vals.reduce((a,b)=>a+b,0) / vals.length;
+}
+function cloDirectPct(cloId) {
+  if (!STATE.students.length) return 0;
+  const passing = STATE.students.filter(s => studentCloPct(s, cloId) >= STATE.threshold).length;
+  return (passing / STATE.students.length) * 100;
+}
+function statusFor(pct) {
+  if (pct === null) return 'muted';
+  if (pct >= STATE.threshold) return 'pass';
+  if (pct >= 60) return 'warn';
+  return 'fail';
+}
+
+function renderCourse() {
+  document.getElementById('course-code').value = STATE.course.code || '';
+  document.getElementById('course-title').value = STATE.course.title || '';
+  document.getElementById('course-instructor').value = STATE.course.instructor || '';
+  document.getElementById('course-term').value = STATE.course.term || '';
+  document.getElementById('course-credits').value = STATE.course.credits || '';
+  document.getElementById('course-students').value = STATE.students.length;
+}
+
+function renderMapping() {
+  const tbody = document.getElementById('mapping-body');
+  tbody.innerHTML = '';
+  STATE.clos.forEach((clo, idx) => {
+    const row = document.createElement('tr');
+    let html = `<td><input class="inline-input id-input" data-idx="${idx}" data-field="id" value="${escapeHtml(clo.id)}"></td>`;
+    html += `<td style="text-align:left"><input class="inline-input" data-idx="${idx}" data-field="text" value="${escapeHtml(clo.text)}" style="font-size:12.5px;color:var(--ink-soft)"></td>`;
+    ALL_SOS.forEach(so => {
+      const checked = (STATE.cloSoMap[clo.id]||[]).includes(so);
+      html += `<td class="checkbox-cell"><input type="checkbox" data-clo="${clo.id}" data-so="${so}" ${checked?'checked':''}></td>`;
+    });
+    html += `<td><button class="btn-remove" onclick="removeCLO(${idx})" title="Remove">×</button></td>`;
+    row.innerHTML = html;
+    tbody.appendChild(row);
+  });
+  tbody.querySelectorAll('.inline-input').forEach(inp => {
+    inp.addEventListener('change', e => updateCLO(+e.target.dataset.idx, e.target.dataset.field, e.target.value));
+  });
+  tbody.querySelectorAll('input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const clo = e.target.dataset.clo, so = e.target.dataset.so;
+      const arr = STATE.cloSoMap[clo] || [];
+      if (e.target.checked && !arr.includes(so)) arr.push(so);
+      if (!e.target.checked) STATE.cloSoMap[clo] = arr.filter(x => x !== so);
+      else STATE.cloSoMap[clo] = arr;
+      renderDashboard();
+      renderPrintView();
+      saveToLocalStorage();
+    });
+  });
+
+  const soDefs = document.getElementById('so-defs');
+  soDefs.innerHTML = '';
+  Object.values(SO_DEFS).forEach(so => {
+    const div = document.createElement('div');
+    div.style.cssText = 'padding:8px 0;border-bottom:1px dashed var(--border)';
+    div.innerHTML = `<strong style="color:var(--psu-navy)">${so.name} — ${so.short}.</strong> <span style="color:var(--ink-soft);font-size:12.5px">${escapeHtml(so.desc)}</span>`;
+    soDefs.appendChild(div);
+  });
+}
+
+function renderAts() {
+  const tbody = document.getElementById('ats-body');
+  tbody.innerHTML = '';
+  STATE.ats.forEach((at, idx) => {
+    const row = document.createElement('tr');
+    const chips = STATE.clos.map(c => {
+      const on = at.clos.includes(c.id);
+      return `<span class="chip ${on?'on':'off'}" data-at-idx="${idx}" data-clo="${c.id}">CLO ${escapeHtml(c.id)}</span>`;
+    }).join('');
+    row.innerHTML = `
+      <td><strong>${at.id}</strong></td>
+      <td><input class="inline-input" data-idx="${idx}" data-field="label" value="${escapeHtml(at.label)}"></td>
+      <td><input class="inline-input" data-idx="${idx}" data-field="type" value="${escapeHtml(at.type)}"></td>
+      <td style="text-align:right"><input class="inline-input tiny" data-idx="${idx}" data-field="max" type="number" step="0.01" value="${at.max}"></td>
+      <td style="text-align:right"><input class="inline-input tiny" data-idx="${idx}" data-field="weight" type="number" step="0.01" value="${at.weight}"></td>
+      <td><div class="chip-row">${chips || '<span style="color:var(--ink-soft);font-size:11px">No CLOs defined yet — add some on the CLO ↔ SO Mapping tab</span>'}</div></td>
+      <td><button class="btn-remove" onclick="removeAT(${idx})" title="Remove">×</button></td>
+    `;
+    tbody.appendChild(row);
+  });
+  tbody.querySelectorAll('.inline-input').forEach(inp => {
+    inp.addEventListener('change', e => updateAT(+e.target.dataset.idx, e.target.dataset.field, e.target.value));
+  });
+  tbody.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', e => toggleATClo(+e.target.dataset.atIdx, e.target.dataset.clo));
+  });
+}
+
+function renderGrades() {
+  const head = document.getElementById('grades-head');
+  const body = document.getElementById('grades-body');
+  let headHtml = '<tr><th style="width:120px">Student ID</th><th style="width:200px">Name</th>';
+  STATE.ats.forEach(at => headHtml += `<th style="text-align:center;min-width:80px" title="${escapeHtml(at.label)} (max ${at.max})">${escapeHtml(at.label)}<br><span style="font-weight:400;color:var(--ink-soft);font-size:10px">/${at.max}</span></th>`);
+  headHtml += '<th style="width:32px"></th></tr>';
+  head.innerHTML = headHtml;
+
+  body.innerHTML = '';
+  if (!STATE.students.length) {
+    body.innerHTML = `<tr><td colspan="${STATE.ats.length + 3}" style="text-align:center;color:var(--ink-soft);padding:20px">No students yet. Click <strong>+ Add Student</strong> or <strong>Paste from CSV</strong>.</td></tr>`;
+    return;
+  }
+  STATE.students.forEach((s, si) => {
+    const row = document.createElement('tr');
+    let html = `<td><input class="inline-input" data-si="${si}" data-sf="id" value="${escapeHtml(s.id || '')}"></td>`;
+    html += `<td><input class="inline-input" data-si="${si}" data-sf="name" value="${escapeHtml(s.name || '')}"></td>`;
+    STATE.ats.forEach(at => {
+      const v = s.grades[at.id] ?? '';
+      html += `<td style="text-align:center"><input class="grade-input" type="number" step="0.01" data-si="${si}" data-at="${at.id}" value="${v}"></td>`;
+    });
+    html += `<td><button class="btn-remove" onclick="removeStudent(${si})" title="Remove">×</button></td>`;
+    row.innerHTML = html;
+    body.appendChild(row);
+  });
+  body.querySelectorAll('.grade-input').forEach(inp => {
+    inp.addEventListener('input', e => updateGrade(+e.target.dataset.si, e.target.dataset.at, e.target.value));
+  });
+  body.querySelectorAll('.inline-input').forEach(inp => {
+    inp.addEventListener('change', e => updateStudent(+e.target.dataset.si, e.target.dataset.sf, e.target.value));
+  });
+}
+
+function renderSurvey() {
+  const body = document.getElementById('survey-body');
+  body.innerHTML = '';
+  if (!STATE.clos.length) {
+    body.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px">No CLOs yet. Add CLOs in the mapping tab.</td></tr>`;
+    return;
+  }
+  STATE.clos.forEach(c => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><strong>${escapeHtml(c.id)}</strong></td>
+      <td style="font-size:12px;color:var(--ink-soft)">${escapeHtml(c.text)}</td>
+      <td style="text-align:right"><input class="grade-input" type="number" min="0" max="5" step="0.1" value="${STATE.ces[c.id] || 0}" data-clo="${c.id}"></td>
+      <td style="text-align:right">${((STATE.ces[c.id]||0)*20).toFixed(1)}%</td>
+    `;
+    body.appendChild(row);
+  });
+  body.querySelectorAll('input').forEach(inp => {
+    inp.addEventListener('input', e => {
+      const v = parseFloat(e.target.value);
+      STATE.ces[e.target.dataset.clo] = isNaN(v) ? 0 : v;
+      renderSurvey();
+      renderDashboard();
+      renderPrintView();
+      saveToLocalStorage();
+    });
+  });
+}
+
+function refreshStats() {
+  document.getElementById('stat-students').textContent = STATE.students.length;
+  document.getElementById('stat-ats').textContent = STATE.ats.length;
+  document.getElementById('stat-clos').textContent = STATE.clos.length;
+  const mappedSos = new Set();
+  Object.values(STATE.cloSoMap).forEach(arr => arr.forEach(s => mappedSos.add(s)));
+  document.getElementById('stat-sos').textContent = mappedSos.size;
+  document.getElementById('course-students').value = STATE.students.length;
+}
+
+function renderDashboard() {
+  refreshStats();
+  const mappedSos = new Set();
+  Object.values(STATE.cloSoMap).forEach(arr => arr.forEach(s => mappedSos.add(s)));
+
+  const wrap = document.getElementById('so-cards');
+  wrap.innerHTML = '';
+  ALL_SOS.forEach(so => {
+    const isMapped = mappedSos.has(so);
+    const direct = isMapped ? soDirectPct(so) : null;
+    const indirect = isMapped ? soIndirectPct(so) : null;
+    const card = document.createElement('div');
+    if (!isMapped) {
+      card.className = 'so-card muted';
+      card.innerHTML = `
+        <div class="so-name">${so} — ${SO_DEFS[so].short}</div>
+        <div class="so-pct">—</div>
+        <div class="so-label">Not assessed this term</div>
+      `;
+    } else {
+      const st = statusFor(direct);
+      const badge = st === 'pass' ? 'PASS' : (st === 'warn' ? 'AT RISK' : 'FAIL');
+      card.className = 'so-card ' + st;
+      card.innerHTML = `
+        <div class="so-name">${so} — ${SO_DEFS[so].short}</div>
+        <div class="so-pct">${(direct||0).toFixed(1)}<span style="font-size:14px;font-weight:500">%</span></div>
+        <div class="so-label">Direct attainment <span class="badge ${st}" style="margin-left:6px">${badge}</span></div>
+        <div class="so-foot">
+          <span>Indirect (CES)</span><span><strong>${(indirect||0).toFixed(1)}%</strong></span>
+        </div>
+      `;
+    }
+    wrap.appendChild(card);
+  });
+
+  const bars = document.getElementById('clo-bars');
+  bars.innerHTML = '';
+  if (!STATE.clos.length) {
+    bars.innerHTML = `<p style="color:var(--ink-soft);text-align:center;padding:20px">No CLOs defined yet.</p>`;
+  } else {
+    STATE.clos.forEach(c => {
+      const pct = cloAvgPct(c.id);
+      const st = statusFor(pct);
+      const colorVar = st === 'pass' ? 'green' : (st === 'warn' ? 'amber' : 'red');
+      const row = document.createElement('div');
+      row.className = 'clo-row';
+      row.innerHTML = `
+        <div class="clo-id">CLO ${escapeHtml(c.id)}</div>
+        <div class="clo-text">${escapeHtml(c.text)}</div>
+        <div class="clo-bar-wrap">
+          <div class="clo-bar ${st}" style="width:${Math.min(pct,100)}%"></div>
+          <div class="threshold-line"></div>
+        </div>
+        <div class="clo-pct" style="color:var(--${colorVar})">${pct.toFixed(1)}%</div>
+      `;
+      bars.appendChild(row);
+    });
+  }
+
+  const sosToShow = ALL_SOS.filter(s => mappedSos.has(s));
+  const head = document.getElementById('student-so-head');
+  const body = document.getElementById('student-so-body');
+  let headHtml = '<tr><th>Student ID</th><th>Name</th>';
+  sosToShow.forEach(so => headHtml += `<th style="text-align:center">${so}</th>`);
+  headHtml += '<th style="text-align:center">Overall</th></tr>';
+  head.innerHTML = headHtml;
+
+  body.innerHTML = '';
+  if (!STATE.students.length || !sosToShow.length) {
+    body.innerHTML = `<tr><td colspan="${sosToShow.length + 3}" style="text-align:center;color:var(--ink-soft);padding:20px">Add students and map at least one CLO to a SO to see attainment data.</td></tr>`;
+  } else {
+    STATE.students.forEach(s => {
+      const row = document.createElement('tr');
+      let html = `<td>${escapeHtml(s.id)}</td><td>${escapeHtml(s.name)}</td>`;
+      const scores = sosToShow.map(so => studentSoPct(s, so));
+      scores.forEach(sc => {
+        const cls = sc >= STATE.threshold ? 'pass-cell' : 'fail-cell';
+        html += `<td style="text-align:center" class="${cls}">${sc.toFixed(1)}%</td>`;
+      });
+      const overall = scores.reduce((a,b)=>a+b,0) / scores.length;
+      const ocls = overall >= STATE.threshold ? 'pass-cell' : 'fail-cell';
+      html += `<td style="text-align:center" class="${ocls}">${overall.toFixed(1)}%</td>`;
+      row.innerHTML = html;
+      body.appendChild(row);
+    });
+  }
+  renderCharts();
+}
+
+function drawCSATChart(svgId, items, xTitle) {
+  const W = 760, H = 340;
+  const padL = 70, padR = 150, padT = 20, padB = 65;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  const groups = items.length;
+  if (!groups) { svg.innerHTML = ''; return; }
+  const groupW = innerW / Math.max(groups, 1);
+  const barW = Math.min(20, (groupW - 10) / 2);
+
+  let parts = [];
+  for (let y = 0; y <= 120; y += 20) {
+    const yPx = padT + innerH - (y / 120) * innerH;
+    parts.push(`<text class="axis-label" x="${padL - 8}" y="${yPx + 4}" text-anchor="end">${y}</text>`);
+    parts.push(`<line class="axis" x1="${padL - 4}" y1="${yPx}" x2="${padL}" y2="${yPx}"/>`);
+  }
+  parts.push(`<line class="axis" x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + innerH}"/>`);
+  parts.push(`<line class="axis" x1="${padL}" y1="${padT + innerH}" x2="${padL + innerW}" y2="${padT + innerH}"/>`);
+
+  const thrY = padT + innerH - (70 / 120) * innerH;
+  parts.push(`<line class="threshold" x1="${padL}" y1="${thrY}" x2="${padL + innerW}" y2="${thrY}"/>`);
+
+  items.forEach((it, i) => {
+    const cx = padL + groupW * i + groupW / 2;
+    const dx = cx - barW - 1;
+    const ix = cx + 1;
+    if (it.direct !== null && it.direct > 0) {
+      const dh = (it.direct / 120) * innerH;
+      parts.push(`<rect class="bar-direct" x="${dx}" y="${padT + innerH - dh}" width="${barW}" height="${dh}"/>`);
+    }
+    if (it.indirect !== null && it.indirect > 0) {
+      const ih = (it.indirect / 120) * innerH;
+      parts.push(`<rect class="bar-indirect" x="${ix}" y="${padT + innerH - ih}" width="${barW}" height="${ih}"/>`);
+    }
+    parts.push(`<text class="group-label" x="${cx}" y="${padT + innerH + 20}">${escapeHtml(it.label)}</text>`);
+  });
+  const yCenter = padT + innerH / 2;
+  parts.push(`<text class="axis-title" transform="rotate(-90 18 ${yCenter})" x="18" y="${yCenter + 4}" text-anchor="middle">Percentage of achievement %</text>`);
+  parts.push(`<text class="axis-title" x="${padL + innerW/2}" y="${padT + innerH + 50}" text-anchor="middle">${escapeHtml(xTitle)}</text>`);
+
+  const legendX = padL + innerW + 18;
+  const legendY = padT + 30;
+  parts.push(`<rect class="bar-direct" x="${legendX}" y="${legendY}" width="22" height="14"/>`);
+  parts.push(`<text class="legend-text" x="${legendX + 30}" y="${legendY + 11}">Direct</text>`);
+  parts.push(`<rect class="bar-indirect" x="${legendX}" y="${legendY + 26}" width="22" height="14"/>`);
+  parts.push(`<text class="legend-text" x="${legendX + 30}" y="${legendY + 37}">Indirect</text>`);
+  parts.push(`<line class="threshold" x1="${legendX}" y1="${legendY + 58}" x2="${legendX + 22}" y2="${legendY + 58}"/>`);
+  parts.push(`<text class="legend-text" x="${legendX + 30}" y="${legendY + 62}">70% target</text>`);
+  svg.innerHTML = parts.join('');
+}
+
+function renderCharts() {
+  const cloItems = STATE.clos.map(c => ({
+    label: "CLO " + c.id,
+    direct: cloDirectPct(c.id),
+    indirect: (STATE.ces[c.id] || 0) * 20
+  }));
+  drawCSATChart('chart-clo', cloItems, "Course Learning Outcomes");
+  const mappedSos = new Set();
+  Object.values(STATE.cloSoMap).forEach(arr => arr.forEach(s => mappedSos.add(s)));
+  const soItems = ALL_SOS.map(so => ({
+    label: so,
+    direct: mappedSos.has(so) ? (soDirectPct(so) || 0) : 0,
+    indirect: mappedSos.has(so) ? (soIndirectPct(so) || 0) : 0
+  }));
+  drawCSATChart('chart-so', soItems, "Student Outcomes");
+}
+
+function renderPrintView() {
+  const pv = document.getElementById('print-view');
+  if (!pv) return;
+
+  // CLO row data — pad to 8 columns like the official template
+  const cloIds = STATE.clos.map(c => c.id);
+  const cloDirects = STATE.clos.map(c => cloDirectPct(c.id));
+  const cloIndirects = STATE.clos.map(c => (STATE.ces[c.id] || 0) * 20);
+  while (cloIds.length < 8) { cloIds.push("0"); cloDirects.push(0); cloIndirects.push(0); }
+
+  // SO row data
+  const mappedSos = new Set();
+  Object.values(STATE.cloSoMap).forEach(arr => arr.forEach(s => mappedSos.add(s)));
+  const soDirects = ALL_SOS.map(so => mappedSos.has(so) ? (soDirectPct(so) || 0) : 0);
+  const soIndirects = ALL_SOS.map(so => mappedSos.has(so) ? (soIndirectPct(so) || 0) : 0);
+
+  const fmt = v => (v === null || v === undefined || isNaN(v)) ? "0" : Math.round(v);
+  const cellCls = v => (v > 0 && v < 70) ? "below" : "";
+
+  const date = new Date();
+  const dateStr = String(date.getMonth()+1).padStart(2,'0') + '/' + String(date.getDate()).padStart(2,'0') + '/' + date.getFullYear();
+
+  pv.innerHTML = `
+    <div class="pv-header">
+      <div class="pv-logo">CS<span class="a">A</span>.T</div>
+      <div class="pv-header-right">
+        <div class="psu">PRINCE SULTAN UNIVERSITY</div>
+        <div class="coe">COLLEGE OF ENGINEERING</div>
+      </div>
+    </div>
+    <div class="pv-subtitle">Course/Student Outcomes Assessment Tool</div>
+
+    <table class="pv-info">
+      <tr><td class="lbl">Course Name:</td><td class="val" colspan="3">${escapeHtml(STATE.course.title)}</td></tr>
+      <tr>
+        <td class="lbl">Course Code:</td><td class="val">${escapeHtml(STATE.course.code)}</td>
+        <td class="lbl">Instructor Name:</td><td class="val">${escapeHtml(STATE.course.instructor)}</td>
+      </tr>
+      <tr>
+        <td class="lbl">Semester:</td><td class="val">${escapeHtml(STATE.course.term)}</td>
+        <td class="lbl">No. of Assessments:</td><td class="val">${STATE.ats.length}</td>
+      </tr>
+      <tr>
+        <td class="lbl">No. of Students:</td><td class="val" colspan="3">${STATE.students.length}</td>
+      </tr>
+    </table>
+
+    <div class="pv-section-title">Course Learning Outcomes</div>
+    <table class="pv-table">
+      <tr><th></th>${cloIds.map(id => `<th>${escapeHtml(id)}</th>`).join('')}</tr>
+      <tr><td class="lbl-cell">Direct</td>${cloDirects.map(v => `<td class="${cellCls(v)}">${fmt(v)}</td>`).join('')}</tr>
+      <tr><td class="lbl-cell">Indirect</td>${cloIndirects.map(v => `<td class="${cellCls(v)}">${fmt(v)}</td>`).join('')}</tr>
+    </table>
+
+    <div class="pv-section-title">Program Learning Outcomes (Student Outcomes)</div>
+    <table class="pv-table">
+      <tr><th></th>${ALL_SOS.map(so => `<th>${so}</th>`).join('')}</tr>
+      <tr><td class="lbl-cell">Direct</td>${soDirects.map(v => `<td class="${cellCls(v)}">${fmt(v)}</td>`).join('')}</tr>
+      <tr><td class="lbl-cell">Indirect</td>${soIndirects.map(v => `<td class="${cellCls(v)}">${fmt(v)}</td>`).join('')}</tr>
+    </table>
+
+    <div class="pv-notes">
+      <div>* Number in red, if any, means that it is below satisfaction.</div>
+      <div>** Student Outcome is considered satisfactory when 70% of the students score 70% or more.</div>
+      <div>*** Indirect score is calculated from the course exit survey after scaling it to 100%.</div>
+    </div>
+
+    <div class="pv-chart-box">
+      <svg id="chart-print" class="csat-chart" viewBox="0 0 760 340" preserveAspectRatio="xMidYMid meet" style="border:none"></svg>
+    </div>
+
+    <div class="pv-rubric-title">If applicable, the results of the rubric used in this course are summarized as:</div>
+    <table class="pv-table">
+      <tr>
+        <th style="text-align:left">Student Outcome</th>
+        <th>AE (%)</th><th>ME (%)</th><th>DE (%)</th><th>BE (%)</th>
+      </tr>
+      <tr><td class="lbl-cell">Rubric Results for</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td></tr>
+      <tr><td class="lbl-cell">Rubric Results for</td><td>NA</td><td>NA</td><td>NA</td><td>NA</td></tr>
+    </table>
+    <div class="pv-rubric-legend">!!Below Expectation (BE), Developing Expectation (DE), Meets Expectations (ME), and Above (or Accomplished) Expectations (AE)</div>
+
+    <div class="pv-date">${dateStr}</div>
+    <div class="pv-clear"></div>
+  `;
+
+  const soItems = ALL_SOS.map((so, i) => ({
+    label: so, direct: soDirects[i], indirect: soIndirects[i]
+  }));
+  drawCSATChart('chart-print', soItems, "Student Outcomes");
+}
+
+function escapeHtml(s) {
+  if (s === undefined || s === null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAll() {
+  renderCourse();
+  renderMapping();
+  renderAts();
+  renderGrades();
+  renderSurvey();
+  renderDashboard();
+  renderPrintView();
+}
+
+function switchPanel(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[data-panel="${name}"]`).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
+}
+
+function dismissHelp() {
+  document.getElementById('help-card').style.display = 'none';
+  try { localStorage.setItem('psu-csat-help-dismissed', '1'); } catch (e) {}
+}
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => switchPanel(tab.dataset.panel));
+});
+
+['course-code','course-title','course-instructor','course-term','course-credits'].forEach(id => {
+  document.getElementById(id).addEventListener('input', e => {
+    STATE.course[id.replace('course-','')] = e.target.value;
+    renderPrintView();
+    saveToLocalStorage();
+  });
+});
+
+(function init() {
+  const restored = loadFromLocalStorage();
+  if (!restored) {
+    try {
+      if (!localStorage.getItem('psu-csat-help-dismissed')) {
+        document.getElementById('help-card').style.display = 'block';
+      }
+    } catch (e) {}
+    // Start empty — user clicks New Course
+  }
+  renderAll();
+})();
+</script>
+
+</body>
+</html>
